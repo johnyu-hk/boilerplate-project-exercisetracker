@@ -66,8 +66,12 @@ app.post("/api/users", function (req, res) {
 });
 
 app.get("/api/users", (req, res) => {
-  users.find({}).then((data) => {
-    res.json(data);
+  users.find({}).then((result) => {
+    res.json(
+      result.map((data) => {
+        return { username: data.username, _id: data._id };
+      })
+    );
   });
 });
 
