@@ -46,7 +46,7 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
 });
 
-app.post("/api/users/", function (req, res) {
+app.post("/api/users", function (req, res) {
   //check if user exist
   console.log("input user name", req.body.username);
   users.findOne({ username: req.body.username }).then((data) => {
@@ -64,6 +64,49 @@ app.post("/api/users/", function (req, res) {
     }
   });
 });
+
+app.get("/api/users", (req, res) => {
+  users.find({}).then((data) => {
+    res.json(data);
+  });
+});
+
+// app.post("/api/users/:_id/exercises", function (req, res) {
+//   console.log("request body: ", req.body);
+//   exercises
+//     .findById({
+//       _id: req.body[":_id"],
+//     })
+//     .then((data) => {
+//       console.log("findById result: ", data);
+//       exercises
+//         .findByIdAndUpdate(
+//           {
+//             _id: req.body[":_id"],
+//           },
+//           {
+//             //An object containing the fields and values you want to update.
+//             username: data.username,
+//             count: data ? data.count + 1 : 1,
+//             log: [
+//               ...data.log,
+//               {
+//                 description: req.body.description,
+//                 duration: req.body.duration,
+//                 date: req.body.date,
+//               },
+//             ],
+//           },
+//           { new: true, upsert: true }
+//         )
+//         .then((data) => {
+//           console.log("result of create exercise", data);
+//         });
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//     });
+// });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
