@@ -64,18 +64,21 @@ app.get("/api/users", (req, res) => {
   });
 });
 
-app
-  .post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false }))
-  .use(bodyParser.json(), function (req, res) {
+app.post(
+  "/api/users/:_id/exercises",
+  bodyParser.urlencoded({ extended: false }),
+  function (req, res) {
+    console.log("req id", req.params._id);
+    console.log("req date", req.body.date);
     let newExerciseRecord = new exercises({
       description: req.body.description,
       duration: parseInt(req.body.duration),
-      date: new Date(req.body.date).toDateString(),
+      date: new Date(req.body.date || Date.now()).toDateString(),
     });
     // if (newExerciseRecord.date == null) {
     //   newExerciseRecord.date = new Date().toDateString().substring(0.10)
     // }
-    console.log(req.params._id);
+
     users
       .findByIdAndUpdate(
         req.params._id,
@@ -95,7 +98,8 @@ app
       .catch((err) => {
         console.error(err);
       });
-  });
+  }
+);
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
