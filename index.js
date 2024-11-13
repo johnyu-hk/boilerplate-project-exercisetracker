@@ -10,29 +10,19 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-const userSchema = new Schema({
-  username: { type: String, required: true },
-});
-const users = mongoose.model("users", userSchema);
-const exerciseSchema = new Schema({
-  username: String,
-  description: String,
-  duration: String, //"Mon Jan 01 1990",
+
+//create user and exercise schema
+const exerciseSchema = new mongoose.Schema({
+  description: { type: String, required: true },
+  duration: { type: Number, required: true },
   date: String,
 });
-const exercises = mongoose.model("exercises", exerciseSchema);
-const logSchema = new Schema({
-  username: String,
-  count: Number,
-  log: [
-    {
-      description: String,
-      duration: Number,
-      date: String,
-    },
-  ],
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  log: [exerciseSchema],
 });
-const logs = mongoose.model("logs", logSchema);
+let users = mongoose.model("users", userSchema);
+let exercises = mongoose.model("exercises", exerciseSchema);
 
 // Express
 app.use(cors());
@@ -40,7 +30,6 @@ app.use(cors());
 app.use(express.static(__dirname + "/public"));
 
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: false })).use(bodyParser.json());
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
@@ -75,42 +64,38 @@ app.get("/api/users", (req, res) => {
   });
 });
 
-// app.post("/api/users/:_id/exercises", function (req, res) {
-//   console.log("request body: ", req.body);
-//   exercises
-//     .findById({
-//       _id: req.body[":_id"],
-//     })
-//     .then((data) => {
-//       console.log("findById result: ", data);
-//       exercises
-//         .findByIdAndUpdate(
-//           {
-//             _id: req.body[":_id"],
-//           },
-//           {
-//             //An object containing the fields and values you want to update.
-//             username: data.username,
-//             count: data ? data.count + 1 : 1,
-//             log: [
-//               ...data.log,
-//               {
-//                 description: req.body.description,
-//                 duration: req.body.duration,
-//                 date: req.body.date,
-//               },
-//             ],
-//           },
-//           { new: true, upsert: true }
-//         )
-//         .then((data) => {
-//           console.log("result of create exercise", data);
-//         });
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//     });
-// });
+app
+  .post("/api/users/:_id/exercises", bodyParser.urlencoded({ extended: false }))
+  .use(bodyParser.json(), function (req, res) {
+    let newExerciseRecord = new exercises({
+      description: req.body.description,
+      duration: parseInt(req.body.duration),
+      date: new Date(req.body.date).toDateString(),
+    });
+    // if (newExerciseRecord.date == null) {
+    //   newExerciseRecord.date = new Date().toDateString().substring(0.10)
+    // }
+    console.log(req.params._id);
+    users
+      .findByIdAndUpdate(
+        req.params._id,
+        { $push: { log: newExerciseRecord } },
+        { new: true }
+      )
+      .then((result) => {
+        console.log(result);
+        let resObject = {};
+        resObject["_id"] = result._id;
+        resObject["username"] = result.username;
+        resObject["description"] = newExerciseRecord.description;
+        resObject["duration"] = newExerciseRecord.duration;
+        resObject["date"] = newExerciseRecord.date;
+        res.json(resObject);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
