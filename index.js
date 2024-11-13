@@ -68,17 +68,11 @@ app.post(
   "/api/users/:_id/exercises",
   bodyParser.urlencoded({ extended: false }),
   function (req, res) {
-    console.log("req id", req.params._id);
-    console.log("req date", req.body.date);
     let newExerciseRecord = new exercises({
       description: req.body.description,
       duration: parseInt(req.body.duration),
       date: new Date(req.body.date || Date.now()).toDateString(),
     });
-    // if (newExerciseRecord.date == null) {
-    //   newExerciseRecord.date = new Date().toDateString().substring(0.10)
-    // }
-
     users
       .findByIdAndUpdate(
         req.params._id,
@@ -100,6 +94,54 @@ app.post(
       });
   }
 );
+
+// app.get("/api/users/:_id/logs", (req, res) => {
+//   users
+//     .findById(req.params._id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//     });
+// });
+app.get("/api/users/:_id/logs/", (req, res) => {
+  users
+    .findById(req.params._id)
+    .then((data) => {
+      console.log(data.log.length);
+      //check query from and to
+      if (req.query.from || req.query.to) {
+        let fromDate = new Date(0);
+        let toDate = new Date();
+        if (req.query.from) {
+          fromDate = new Date(req.query.from);
+        }
+        if (req.query.to) {
+          toDate = new Date(req.query.to);
+        }
+        data.log = data.log.filter((exercise) => {
+          let exerciseDate = new Date(exercise.date).getTime();
+          return (
+            exerciseDate >= fromDate.getTime() &&
+            exerciseDate <= toDate.getTime()
+          );
+        });
+      }
+      //check query limit
+      if (req.query.limit) {
+        data.log = data.log.slice(0, req.query.limit);
+      }
+      //count the result
+      data._doc.count = data.log.length;
+      console.log(Object.keys(data));
+      console.log(Object.values(data));
+      res.json(data);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
